@@ -1,3 +1,4 @@
+#Dockerfile will create image, compose will try to run it, but nothing works yet with the python script for ltr559 driver
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build-env
 WORKDIR /app
 
