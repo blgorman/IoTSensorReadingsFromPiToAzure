@@ -9,14 +9,16 @@ namespace IoTSensorReadingsFromPiToAzure
         private static readonly object instanceLock = new object();
 
         private static IConfigurationRoot _configuration;
+        private static IConfigurationBuilder _builder;
 
         private ConfigurationBuilderSingleton()
         {
-            var builder = new ConfigurationBuilder()
+            _builder = new ConfigurationBuilder()
                                 .SetBasePath(Directory.GetCurrentDirectory())
+                                .AddEnvironmentVariables()
                                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-
-            _configuration = builder.Build();
+            
+            _configuration = _builder.Build();
         }
 
         public static ConfigurationBuilderSingleton Instance

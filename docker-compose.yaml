@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:      
+  using-env-variables:
+    image: enviroimage
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment: 
+      - Device:AzureConnectionString=HostName=EnviroMonitorHub.azure-devices.net;DeviceId=retropie-enviro-1000;SharedAccessKey=C2HyHMDcxUMVUcjHUlZR2cldcd54dMwnIi+6RIQAVYk=
+      - Device:TelemetryReadDurationInSeconds=45
+      - Device:OutputTelemetry=true

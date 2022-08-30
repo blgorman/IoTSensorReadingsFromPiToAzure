@@ -5,22 +5,24 @@ using Iot.Device.Bmxx80;
 using Iot.Device.Bmxx80.PowerMode;
 using System.Device.I2c;
 using System.Text;
+using System.Linq;
 
 namespace IoTSensorReadingsFromPiToAzure
 {
-    
+
 
     public class Program
     {
-        private static IConfigurationRoot _configuration;
+        private static IConfiguration _configuration;
         private static DeviceClient _deviceClient;
+        private static bool _shouldShowTelemetryOutput = true;
         private static string _deviceConnectionString = "";
-        private static int _telemetryReadForSeconds = 30;
+        private static int _telemetryReadForSeconds = 15;
 
         public static async Task Main(string[] args)
         {
             BuildOptions();
-
+            BuildConfigValues();
             await ReadSensorData();
 
             Console.WriteLine("Program Completed");
@@ -31,29 +33,52 @@ namespace IoTSensorReadingsFromPiToAzure
             _configuration = ConfigurationBuilderSingleton.ConfigurationRoot;
         }
 
-        private static async Task ReadSensorData()
+        private static string GetConfigValue(string variableKey)
         {
-            Console.WriteLine("Would you like to output each telemetry reading to the console [y/n]?");
-            var shouldShowIndivudualTelemetry = Console.ReadLine()?.StartsWith("y", StringComparison.OrdinalIgnoreCase) ?? false;
-        
+            var variableValue = Environment.GetEnvironmentVariable(variableKey);
+            if (string.IsNullOrWhiteSpace(variableValue))
+            {
+                variableValue = _configuration[variableKey];
+            }
+
+            return variableValue;
+        }
+
+        private static void BuildConfigValues()
+        {
+            _shouldShowTelemetryOutput = Convert.ToBoolean(GetConfigValue("Device:OutputTelemetry"));
+            Console.WriteLine($"Show Telemetry: {_shouldShowTelemetryOutput}");
             //get device connection string
-            _deviceConnectionString = _configuration["Device:AzureConnectionString"];
-            //get configured read duration [default/min => 30 seconds]
-            var duration = _configuration["Device:TelemetryReadDurationInSeconds"];
+            _deviceConnectionString = GetConfigValue("Device:AzureConnectionString");
+            var keyIndex = _deviceConnectionString.IndexOf("SharedAccessKey");
+            var safeShowConStr = _deviceConnectionString.Substring(0, keyIndex);
+            safeShowConStr += "SharedAccessKey=*****************";
+            Console.WriteLine($"Connection string: {safeShowConStr}");
+
+            //get configured read duration [default/min => 15 seconds]
+            var duration = GetConfigValue("Device:TelemetryReadDurationInSeconds");
+            Console.WriteLine($"Telemetry Read Duration set to: {duration} seconds");
+
+            //update duration from value if > 15
             if (!string.IsNullOrWhiteSpace(duration))
             {
                 int.TryParse(duration, out int readDurationSeconds);
-                if (readDurationSeconds > 30)
+                if (readDurationSeconds > 15)
                 {
                     _telemetryReadForSeconds = readDurationSeconds;
-                }   
+                }
             }
+        }
 
+
+        private static async Task ReadSensorData()
+        {
             //set up the device client
             _deviceClient = DeviceClient.CreateFromConnectionString(
                     _deviceConnectionString,
                     TransportType.Mqtt);
 
+            //set time to end reading data
             var endReadingsAtTime = DateTime.Now.AddSeconds(_telemetryReadForSeconds);
 
             //utilize the library to read Bme280 data
@@ -67,28 +92,29 @@ namespace IoTSensorReadingsFromPiToAzure
             var script = @"~/enviro/enviroplus-python/examples/singlelight.py"; 
             var args = $"{script}"; 
 
+            //loop until duration
             while(DateTime.Now < endReadingsAtTime)
             {
                 bme280.SetPowerMode(Bmx280PowerMode.Forced);
                 Thread.Sleep(measurementTime);
 
+                //read values for temp/pressure/humidity/altitude
                 bme280.TryReadTemperature(out var tempValue);
                 bme280.TryReadPressure(out var preValue);
                 bme280.TryReadHumidity(out var humValue);
                 bme280.TryReadAltitude(out var altValue);
 
+                //set base values:
                 var envData = new EnviroSensorData();
-
                 envData.Temperature = $"{tempValue.DegreesCelsius:0.#}\u00B0C";
                 envData.Humidity = $"{humValue.Percent:#.##}%";
                 envData.Pressure = $"{preValue.Hectopascals:#.##} hPa";
                 envData.Altitude = $"{altValue.Meters:#} m";
 
+                //read light and proximity values
                 string lightProx = string.Empty;
-
                 using (Process process = new Process())
                 {
-
                     process.StartInfo.UseShellExecute = false;
                     process.StartInfo.FileName = command;
                     process.StartInfo.Arguments = args;
@@ -105,8 +131,7 @@ namespace IoTSensorReadingsFromPiToAzure
                 envData.Light = result[3];
                 envData.Proximity = result[7];
 
-                
-                if(shouldShowIndivudualTelemetry)
+                if(_shouldShowTelemetryOutput)
                 {
                     Console.WriteLine(new string('*', 80));
                     Console.WriteLine("* Telemetry Data: ");
@@ -118,13 +143,14 @@ namespace IoTSensorReadingsFromPiToAzure
                                                             envData.Humidity, envData.Altitude, 
                                                             envData.Light, envData.Proximity);
 
+                //telemetry object has the full output:
                 var telemetryMessage = telemetryObject.ToJson();
-
+                //create the message to send to the hub
                 var msg = new Message(Encoding.ASCII.GetBytes(telemetryMessage));
-
                 //send the telemetry to azure
                 await _deviceClient.SendEventAsync(msg);
 
+                //output result
                 Console.WriteLine($"Telemetry sent {DateTime.Now.ToShortTimeString()}");
                 Thread.Sleep(500);
             }
