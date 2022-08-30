@@ -89,7 +89,7 @@ namespace IoTSensorReadingsFromPiToAzure
             //device readings created by python script execution on the device:
             int measurementTime = bme280.GetMeasurementDuration();
             var command = "python";
-            var script = @"~/enviro/enviroplus-python/examples/singlelight.py"; 
+            var script = @"/home/pi/enviro/enviroplus-python/examples/singlelight.py";
             var args = $"{script}"; 
 
             //loop until duration
