@@ -14,10 +14,10 @@
         {
             return $"Temperature: {Temperature}\n" +
                     $"Pressure: {Pressure}\n" +
-                    $"Relative humidity: {Humidity}" +
-                    $"Estimated altitude: {Altitude}" +
-                    $"Light: {Light} lux" +
-                    $"Proximity: {Proximity}";
+                    $"Relative humidity: {Humidity}\n" +
+                    $"Estimated altitude: {Altitude}\n" +
+                    $"Light: {Light} lux\n" +
+                    $"Proximity: {Proximity}\n";
         }
     }
 }
