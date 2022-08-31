@@ -7,10 +7,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTSensorReadingsFromPiToAz
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8F9F9E01-BF2E-466A-853A-6843716C6494}"
 	ProjectSection(SolutionItems) = preProject
-		Dockerfile = Dockerfile
 		docker-compose.yaml = docker-compose.yaml
+		Dockerfile = Dockerfile
 		LICENSE = LICENSE
 		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{F1FC3049-E19C-46BB-A305-57E9B572EF37}"
+	ProjectSection(SolutionItems) = preProject
+		images\enviro+pim458.png = images\enviro+pim458.png
+		images\enviro_pim486.png = images\enviro_pim486.png
+		images\gpioribbon.png = images\gpioribbon.png
+		images\pi3.png = images\pi3.png
 	EndProjectSection
 EndProject
 Global
@@ -26,6 +34,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F1FC3049-E19C-46BB-A305-57E9B572EF37} = {8F9F9E01-BF2E-466A-853A-6843716C6494}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FCA055B4-0042-4690-8EEC-0E6FF565E62A}
