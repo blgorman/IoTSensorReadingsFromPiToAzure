@@ -4,6 +4,7 @@ namespace IoTSensorReadingsFromPiToAzure
 {
     public class BME280
     {
+        public string DeviceId {get; set;}
         public string TemperatureCelsius { get; set; }
         public string PressureHectoPascals { get; set; }
         public string RelativeHumidityPercent { get; set; }
@@ -11,8 +12,9 @@ namespace IoTSensorReadingsFromPiToAzure
 
         public BME280() { }
 
-        public BME280(string temp, string pressure, string humidity, string altitude)
+        public BME280(string deviceId, string temp, string pressure, string humidity, string altitude)
         {
+            DeviceId = deviceId;
             TemperatureCelsius = temp;
             PressureHectoPascals = pressure;
             RelativeHumidityPercent = humidity;

@@ -14,7 +14,8 @@ namespace IoTSensorReadingsFromPiToAzure
         private static IConfiguration _configuration;
         private static DeviceClient _deviceClient;
         private static bool _shouldShowTelemetryOutput = true;
-        private static string _deviceConnectionString = "";
+        private static string _deviceConnectionString = string.Empty;
+        private static string _deviceId = string.Empty;
         private static int _telemetryReadInterval = 30;
         private static int _telemetryReadDurationSeconds = 90;
 
@@ -49,6 +50,7 @@ namespace IoTSensorReadingsFromPiToAzure
             Console.WriteLine($"Show Telemetry: {_shouldShowTelemetryOutput}");
             //get device connection string
             _deviceConnectionString = GetConfigValue("Device:AzureConnectionString");
+            _deviceId = GetConfigValue("Device:DeviceId");
             var keyIndex = _deviceConnectionString.IndexOf("SharedAccessKey");
             var safeShowConStr = _deviceConnectionString.Substring(0, keyIndex);
             safeShowConStr += "SharedAccessKey=*****************";
@@ -151,7 +153,7 @@ namespace IoTSensorReadingsFromPiToAzure
                     Console.WriteLine(new string('*', 80));
                 }
 
-                var telemetryObject = new BME280PlusLTR559(envData.Temperature, envData.Pressure, 
+                var telemetryObject = new BME280PlusLTR559(_deviceId, envData.Temperature, envData.Pressure, 
                                                             envData.Humidity, envData.Altitude, 
                                                             envData.Light, envData.Proximity);
 
