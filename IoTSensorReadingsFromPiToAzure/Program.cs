@@ -9,15 +9,14 @@ using System.Linq;
 
 namespace IoTSensorReadingsFromPiToAzure
 {
-
-
     public class Program
     {
         private static IConfiguration _configuration;
         private static DeviceClient _deviceClient;
         private static bool _shouldShowTelemetryOutput = true;
         private static string _deviceConnectionString = "";
-        private static int _telemetryReadForSeconds = 15;
+        private static int _telemetryReadInterval = 30;
+        private static int _telemetryReadDurationSeconds = 90;
 
         public static async Task Main(string[] args)
         {
@@ -65,7 +64,7 @@ namespace IoTSensorReadingsFromPiToAzure
                 int.TryParse(duration, out int readDurationSeconds);
                 if (readDurationSeconds > 15)
                 {
-                    _telemetryReadForSeconds = readDurationSeconds;
+                    _telemetryReadDurationSeconds = readDurationSeconds;
                 }
             }
         }
@@ -78,8 +77,21 @@ namespace IoTSensorReadingsFromPiToAzure
                     _deviceConnectionString,
                     TransportType.Mqtt);
 
+            int duration = 90;
+            bool success = false;
+            while (!success)
+            {
+                Console.WriteLine("How long should I run in seconds?");
+                success = int.TryParse(Console.ReadLine(), out duration);
+                if (!success)
+                {
+                    Console.WriteLine("Invalid entry, please try again");
+                }
+            }
+            _telemetryReadDurationSeconds = duration > 30 ? duration : 30;
+
             //set time to end reading data
-            var endReadingsAtTime = DateTime.Now.AddSeconds(_telemetryReadForSeconds);
+            var endReadingsAtTime = DateTime.Now.AddSeconds(_telemetryReadDurationSeconds);
 
             //utilize the library to read Bme280 data
             var i2cSettings = new I2cConnectionSettings(1, Bme280.SecondaryI2cAddress);
@@ -89,7 +101,7 @@ namespace IoTSensorReadingsFromPiToAzure
             //device readings created by python script execution on the device:
             int measurementTime = bme280.GetMeasurementDuration();
             var command = "python";
-            var script = @"/home/pi/enviro/enviroplus-python/examples/singlelight.py";
+            var script = @"./singlelight.py";
             var args = $"{script}"; 
 
             //loop until duration
@@ -151,8 +163,8 @@ namespace IoTSensorReadingsFromPiToAzure
                 await _deviceClient.SendEventAsync(msg);
 
                 //output result
-                Console.WriteLine($"Telemetry sent {DateTime.Now.ToShortTimeString()}");
-                Thread.Sleep(500);
+                Console.WriteLine($"Telemetry sent {DateTime.Now}");
+                Thread.Sleep(_telemetryReadInterval * 1000);
             }
 
             Console.WriteLine("All telemetry read");
